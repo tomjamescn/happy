@@ -148,6 +148,19 @@ export function isSessionOnline(session: Session): boolean {
 }
 
 /**
+ * 从完整路径中提取目录名（最后一段）
+ * @param path - 完整路径，如 ~/workspace/project 或 /home/user/workspace/project
+ * @returns 目录名，如 project
+ */
+export function getDirectoryName(path: string): string {
+    if (!path) return '';
+    // 移除尾部斜杠后分割
+    const normalizedPath = path.endsWith('/') ? path.slice(0, -1) : path;
+    const segments = normalizedPath.split('/').filter(Boolean);
+    return segments.pop() || path;
+}
+
+/**
  * Checks if a session should be shown in the active sessions group.
  * Uses the active flag directly.
  */

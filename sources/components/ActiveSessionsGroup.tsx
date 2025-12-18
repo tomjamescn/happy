@@ -4,7 +4,7 @@ import { Text } from '@/components/StyledText';
 import { useRouter } from 'expo-router';
 import { Session, Machine } from '@/sync/storageTypes';
 import { Ionicons } from '@expo/vector-icons';
-import { getSessionName, useSessionStatus, getSessionAvatarId, formatPathRelativeToHome } from '@/utils/sessionUtils';
+import { getSessionName, useSessionStatus, getSessionAvatarId, formatPathRelativeToHome, getDirectoryName } from '@/utils/sessionUtils';
 import { Avatar } from './Avatar';
 import { Typography } from '@/constants/Typography';
 import { StatusDot } from './StatusDot';
@@ -45,6 +45,10 @@ const stylesheet = StyleSheet.create((theme, runtime) => ({
         justifyContent: 'space-between',
         alignItems: 'center',
     },
+    sectionHeaderPressed: {
+        backgroundColor: theme.colors.surfaceHighest,
+        opacity: 0.8,
+    },
     sectionHeaderLeft: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -58,6 +62,7 @@ const stylesheet = StyleSheet.create((theme, runtime) => ({
         lineHeight: Platform.select({ ios: 18, default: 20 }),
         letterSpacing: Platform.select({ ios: -0.08, default: 0.1 }),
         fontWeight: Platform.select({ ios: 'normal', default: '500' }),
+        flexShrink: 1,
     },
     sectionHeaderMachine: {
         ...Typography.default('regular'),
@@ -181,6 +186,55 @@ interface ActiveSessionsGroupProps {
     selectedSessionId?: string;
 }
 
+interface SectionHeaderProps {
+    machineName: string;
+    displayPath: string;
+    directoryName: string;
+    firstSession: Session | undefined;
+}
+
+const SectionHeader = React.memo(({
+    machineName,
+    displayPath,
+    directoryName,
+    firstSession
+}: SectionHeaderProps) => {
+    const styles = stylesheet;
+    const [showFullPath, setShowFullPath] = React.useState(false);
+
+    const togglePath = React.useCallback(() => {
+        setShowFullPath(prev => !prev);
+    }, []);
+
+    // 构建显示文本: "机器名 - 目录名" 或 "机器名 - 完整路径"
+    const displayText = React.useMemo(() => {
+        const pathPart = showFullPath ? displayPath : directoryName;
+        return `${machineName} - ${pathPart}`;
+    }, [machineName, displayPath, directoryName, showFullPath]);
+
+    return (
+        <Pressable
+            style={({ pressed }) => [
+                styles.sectionHeader,
+                pressed && styles.sectionHeaderPressed,
+            ]}
+            onPress={togglePath}
+        >
+            <View style={styles.sectionHeaderLeft}>
+                <Text
+                    style={styles.sectionHeaderPath}
+                    numberOfLines={showFullPath ? undefined : 1}
+                >
+                    {displayText}
+                </Text>
+            </View>
+            {/* Git Status 在右侧 */}
+            {firstSession && (
+                <ProjectGitStatus sessionId={firstSession.id} />
+            )}
+        </Pressable>
+    );
+});
 
 export function ActiveSessionsGroup({ sessions, selectedSessionId }: ActiveSessionsGroupProps) {
     const styles = stylesheet;
@@ -268,28 +322,20 @@ export function ActiveSessionsGroup({ sessions, selectedSessionId }: ActiveSessi
                     ? firstMachine?.machineName
                     : `${projectGroup.machines.size} machines`;
 
+                // 获取目录名（路径最后一段）
+                const directoryName = getDirectoryName(projectGroup.displayPath);
+
+                // 获取第一个会话用于 Git 状态
+                const firstSession = Array.from(projectGroup.machines.values())[0]?.sessions[0];
+
                 return (
                     <View key={projectPath}>
-                        {/* Section header on grouped background */}
-                        <View style={styles.sectionHeader}>
-                            <View style={styles.sectionHeaderLeft}>
-                                <Text style={styles.sectionHeaderPath}>
-                                    {projectGroup.displayPath}
-                                </Text>
-                            </View>
-                            {/* Show git status instead of machine name */}
-                            {(() => {
-                                // Get the first session from any machine in this project
-                                const firstSession = Array.from(projectGroup.machines.values())[0]?.sessions[0];
-                                return firstSession ? (
-                                    <ProjectGitStatus sessionId={firstSession.id} />
-                                ) : (
-                                    <Text style={styles.sectionHeaderMachine} numberOfLines={1}>
-                                        {machineName}
-                                    </Text>
-                                );
-                            })()}
-                        </View>
+                        <SectionHeader
+                            machineName={machineName}
+                            displayPath={projectGroup.displayPath}
+                            directoryName={directoryName}
+                            firstSession={firstSession}
+                        />
 
                         {/* Card with just the sessions */}
                         <View style={styles.projectCard}>
