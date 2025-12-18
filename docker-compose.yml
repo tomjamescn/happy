@@ -1,0 +1,6 @@
+version: '3.8'
+services:
+  happy-app:
+    build: .
+    ports:
+      - "3002:80"
