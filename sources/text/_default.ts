@@ -478,10 +478,15 @@ export const en = {
             readNotebook: 'Read Notebook',
             editNotebook: 'Edit Notebook',
             todoList: 'Todo List',
+            askQuestion: 'Question',
             webSearch: 'Web Search',
             reasoning: 'Reasoning',
             applyChanges: 'Update file',
             viewDiff: 'Current file changes',
+        },
+        askQuestion: {
+            confirmSelection: 'Confirm Selection',
+            selectAtLeastOne: 'Please select at least one option',
         },
         desc: {
             terminalCmd: ({ cmd }: { cmd: string }) => `Terminal(cmd: ${cmd})`,

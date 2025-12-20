@@ -123,6 +123,14 @@ type ReducerMessage = {
     createdAt: number;
     role: 'user' | 'agent';
     text: string | null;
+    image: {
+        text?: string;  // Optional user question/context with the image
+        url: string;
+        width: number;
+        height: number;
+        thumbhash: string;
+        caption?: string;
+    } | null;
     event: AgentEvent | null;
     tool: ToolCall | null;
     meta?: MessageMeta;
@@ -312,6 +320,7 @@ export function reducer(state: ReducerState, messages: NormalizedMessage[], agen
             event: event,
             tool: null,
             text: null,
+            image: null,
             meta: message.meta,
         });
         changed.add(mid);
@@ -391,6 +400,7 @@ export function reducer(state: ReducerState, messages: NormalizedMessage[], agen
                         role: 'agent',
                         createdAt: request.createdAt || Date.now(),
                         text: null,
+                        image: null,
                         tool: toolCall,
                         event: null,
                     });
@@ -553,6 +563,7 @@ export function reducer(state: ReducerState, messages: NormalizedMessage[], agen
                         role: 'agent',
                         createdAt: completed.createdAt || Date.now(),
                         text: null,
+                        image: null,
                         tool: toolCall,
                         event: null,
                     });
@@ -600,7 +611,15 @@ export function reducer(state: ReducerState, messages: NormalizedMessage[], agen
                 realID: msg.id,
                 role: 'user',
                 createdAt: msg.createdAt,
-                text: msg.content.text,
+                text: msg.content.type === 'text' ? msg.content.text : null,
+                image: msg.content.type === 'image' ? {
+                    text: msg.content.text,
+                    url: msg.content.url,
+                    width: msg.content.width,
+                    height: msg.content.height,
+                    thumbhash: msg.content.thumbhash,
+                    caption: msg.content.caption
+                } : null,
                 tool: null,
                 event: null,
                 meta: msg.meta,
@@ -637,6 +656,7 @@ export function reducer(state: ReducerState, messages: NormalizedMessage[], agen
                         role: 'agent',
                         createdAt: msg.createdAt,
                         text: c.text,
+                        image: null,
                         tool: null,
                         event: null,
                         meta: msg.meta,
@@ -739,6 +759,7 @@ export function reducer(state: ReducerState, messages: NormalizedMessage[], agen
                             role: 'agent',
                             createdAt: msg.createdAt,
                             text: null,
+                            image: null,
                             tool: toolCall,
                             event: null,
                             meta: msg.meta,
@@ -851,6 +872,7 @@ export function reducer(state: ReducerState, messages: NormalizedMessage[], agen
                 role: 'user',
                 createdAt: msg.createdAt,
                 text: msg.content[0].prompt,
+                image: null,
                 tool: null,
                 event: null,
                 meta: msg.meta,
@@ -868,6 +890,7 @@ export function reducer(state: ReducerState, messages: NormalizedMessage[], agen
                         role: 'agent',
                         createdAt: msg.createdAt,
                         text: c.text,
+                        image: null,
                         tool: null,
                         event: null,
                         meta: msg.meta,
@@ -911,6 +934,7 @@ export function reducer(state: ReducerState, messages: NormalizedMessage[], agen
                         role: 'agent',
                         createdAt: msg.createdAt,
                         text: null,
+                        image: null,
                         tool: toolCall,
                         event: null,
                         meta: msg.meta,
@@ -1030,6 +1054,7 @@ export function reducer(state: ReducerState, messages: NormalizedMessage[], agen
                 event: msg.content,
                 tool: null,
                 text: null,
+                image: null,
                 meta: msg.meta,
             });
             changed.add(mid);
@@ -1105,6 +1130,16 @@ function convertReducerMessageToMessage(reducerMsg: ReducerMessage, state: Reduc
             kind: 'user-text',
             text: reducerMsg.text,
             ...(reducerMsg.meta?.displayText && { displayText: reducerMsg.meta.displayText }),
+            meta: reducerMsg.meta
+        };
+    } else if (reducerMsg.role === 'user' && reducerMsg.image !== null) {
+        return {
+            id: reducerMsg.id,
+            localId: null,
+            createdAt: reducerMsg.createdAt,
+            kind: 'user-image',
+            text: reducerMsg.image.text,
+            image: reducerMsg.image,
             meta: reducerMsg.meta
         };
     } else if (reducerMsg.role === 'agent' && reducerMsg.text !== null) {

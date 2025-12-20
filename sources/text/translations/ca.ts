@@ -478,10 +478,15 @@ export const ca: TranslationStructure = {
             readNotebook: 'Llegeix quadern',
             editNotebook: 'Edita quadern',
             todoList: 'Llista de tasques',
+            askQuestion: 'Pregunta',
             webSearch: 'Cerca web',
             reasoning: 'Raonament',
             applyChanges: 'Actualitza fitxer',
             viewDiff: 'Canvis del fitxer actual',
+        },
+        askQuestion: {
+            confirmSelection: 'Confirma la selecció',
+            selectAtLeastOne: 'Si us plau, selecciona almenys una opció',
         },
         desc: {
             terminalCmd: ({ cmd }: { cmd: string }) => `Terminal(cmd: ${cmd})`,

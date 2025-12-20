@@ -480,10 +480,15 @@ export const zhHans: TranslationStructure = {
             readNotebook: '读取 Notebook',
             editNotebook: '编辑 Notebook',
             todoList: '待办列表',
+            askQuestion: '问题',
             webSearch: 'Web 搜索',
             reasoning: '推理',
             applyChanges: '更新文件',
             viewDiff: '当前文件更改',
+        },
+        askQuestion: {
+            confirmSelection: '确认选择',
+            selectAtLeastOne: '请至少选择一个选项',
         },
         desc: {
             terminalCmd: ({ cmd }: { cmd: string }) => `终端(命令: ${cmd})`,

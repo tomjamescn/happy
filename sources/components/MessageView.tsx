@@ -1,9 +1,10 @@
 import * as React from "react";
 import { View, Text } from "react-native";
+import { Image } from 'expo-image';
 import { StyleSheet } from 'react-native-unistyles';
 import { MarkdownView } from "./markdown/MarkdownView";
 import { t } from '@/text';
-import { Message, UserTextMessage, AgentTextMessage, ToolCallMessage } from "@/sync/typesMessage";
+import { Message, UserTextMessage, UserImageMessage, AgentTextMessage, ToolCallMessage } from "@/sync/typesMessage";
 import { Metadata } from "@/sync/storageTypes";
 import { layout } from "./layout";
 import { ToolView } from "./tools/ToolView";
@@ -42,6 +43,9 @@ function RenderBlock(props: {
     case 'user-text':
       return <UserTextBlock message={props.message} sessionId={props.sessionId} />;
 
+    case 'user-image':
+      return <UserImageBlock message={props.message} sessionId={props.sessionId} />;
+
     case 'agent-text':
       return <AgentTextBlock message={props.message} sessionId={props.sessionId} />;
 
@@ -79,6 +83,47 @@ function UserTextBlock(props: {
         {/* {__DEV__ && (
           <Text style={styles.debugText}>{JSON.stringify(props.message.meta)}</Text>
         )} */}
+      </View>
+    </View>
+  );
+}
+
+function UserImageBlock(props: {
+  message: UserImageMessage;
+  sessionId: string;
+}) {
+  const handleOptionPress = React.useCallback((option: Option) => {
+    sync.sendMessage(props.sessionId, option.title);
+  }, [props.sessionId]);
+
+  // Calculate display dimensions (max 300px width, maintain aspect ratio)
+  const maxWidth = 300;
+  const aspectRatio = props.message.image.width / props.message.image.height;
+  const displayWidth = Math.min(maxWidth, props.message.image.width);
+  const displayHeight = displayWidth / aspectRatio;
+
+  return (
+    <View style={styles.userMessageContainer}>
+      <View style={styles.userMessageBubble}>
+        {props.message.text && (
+          <MarkdownView markdown={props.message.text} onOptionPress={handleOptionPress} />
+        )}
+        <View style={styles.imageContainer}>
+          <Image
+            source={{ uri: props.message.image.url }}
+            style={{
+              width: displayWidth,
+              height: displayHeight,
+              borderRadius: 8,
+            }}
+            contentFit="cover"
+            placeholder={props.message.image.thumbhash}
+            transition={200}
+          />
+        </View>
+        {props.message.image.caption && (
+          <Text style={styles.captionText}>{props.message.image.caption}</Text>
+        )}
       </View>
     </View>
   );
@@ -204,6 +249,22 @@ const styles = StyleSheet.create((theme) => ({
   agentEventText: {
     color: theme.colors.agentEventText,
     fontSize: 14,
+  },
+  placeholderText: {
+    color: theme.colors.text,
+    fontSize: 14,
+    fontStyle: 'italic',
+  },
+  imageContainer: {
+    marginTop: 8,
+    marginBottom: 4,
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  captionText: {
+    color: theme.colors.text,
+    fontSize: 12,
+    marginTop: 4,
   },
   toolContainer: {
     marginHorizontal: 8,

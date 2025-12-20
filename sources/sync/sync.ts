@@ -314,6 +314,123 @@ class Sync {
         });
     }
 
+    async sendImageMessage(
+        sessionId: string,
+        imageUrl: string,
+        width: number,
+        height: number,
+        thumbhash: string,
+        text?: string,
+        caption?: string
+    ) {
+        // Get encryption
+        const encryption = this.encryption.getSessionEncryption(sessionId);
+        if (!encryption) {
+            console.error(`Session ${sessionId} not found`);
+            return;
+        }
+
+        // Get session data from storage
+        const session = storage.getState().sessions[sessionId];
+        if (!session) {
+            console.error(`Session ${sessionId} not found in storage`);
+            return;
+        }
+
+        // Read permission mode and model mode from session state
+        const permissionMode = session.permissionMode || 'default';
+        const modelMode = session.modelMode || 'default';
+
+        // Generate local ID
+        const localId = randomUUID();
+
+        // Determine sentFrom based on platform
+        let sentFrom: string;
+        if (Platform.OS === 'web') {
+            sentFrom = 'web';
+        } else if (Platform.OS === 'android') {
+            sentFrom = 'android';
+        } else if (Platform.OS === 'ios') {
+            if (isRunningOnMac()) {
+                sentFrom = 'mac';
+            } else {
+                sentFrom = 'ios';
+            }
+        } else {
+            sentFrom = 'web';
+        }
+
+        // Resolve model settings based on modelMode
+        let model: string | null = null;
+        let fallbackModel: string | null = null;
+
+        switch (modelMode) {
+            case 'default':
+                model = null;
+                fallbackModel = null;
+                break;
+            case 'adaptiveUsage':
+                model = 'claude-opus-4-1-20250805';
+                fallbackModel = 'claude-sonnet-4-5-20250929';
+                break;
+            case 'sonnet':
+                model = 'claude-sonnet-4-5-20250929';
+                fallbackModel = null;
+                break;
+            case 'opus':
+                model = 'claude-opus-4-1-20250805';
+                fallbackModel = null;
+                break;
+            default:
+                model = null;
+                fallbackModel = null;
+                break;
+        }
+
+        // Create user image message content with metadata
+        const content: RawRecord = {
+            role: 'user',
+            content: {
+                type: 'image',
+                text,
+                url: imageUrl,
+                width,
+                height,
+                thumbhash,
+                caption
+            },
+            meta: {
+                sentFrom,
+                permissionMode: permissionMode || 'default',
+                model,
+                fallbackModel,
+                appendSystemPrompt: systemPrompt
+            }
+        };
+        const encryptedRawRecord = await encryption.encryptRawRecord(content);
+
+        // Add to messages - normalize the raw record
+        const createdAt = Date.now();
+        const normalizedMessage = normalizeRawMessage(localId, localId, createdAt, content);
+        if (normalizedMessage) {
+            this.applyMessages(sessionId, [normalizedMessage]);
+        }
+
+        const ready = await this.waitForAgentReady(sessionId);
+        if (!ready) {
+            log.log(`Session ${sessionId} not ready after timeout, sending anyway`);
+        }
+
+        // Send message
+        apiSocket.send('message', {
+            sid: sessionId,
+            message: encryptedRawRecord,
+            localId,
+            sentFrom,
+            permissionMode: permissionMode || 'default'
+        });
+    }
+
     applySettings = (delta: Partial<Settings>) => {
         storage.getState().applySettingsLocal(delta);
 

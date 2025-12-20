@@ -14,11 +14,13 @@ import { MultiEditViewFull } from './MultiEditViewFull';
 import { CodexBashView } from './CodexBashView';
 import { CodexPatchView } from './CodexPatchView';
 import { CodexDiffView } from './CodexDiffView';
+import { AskUserQuestionView } from './AskUserQuestionView';
 
 export type ToolViewProps = {
     tool: ToolCall;
     metadata: Metadata | null;
-    messages: Message[]
+    messages: Message[];
+    sessionId?: string;
 }
 
 // Type for tool view components
@@ -33,6 +35,7 @@ export const toolViewRegistry: Record<string, ToolViewComponent> = {
     CodexDiff: CodexDiffView,
     Write: WriteView,
     TodoWrite: TodoView,
+    AskUserQuestion: AskUserQuestionView,
     ExitPlanMode: ExitPlanToolView,
     exit_plan_mode: ExitPlanToolView,
     MultiEdit: MultiEditView,
@@ -67,3 +70,4 @@ export { MultiEditViewFull } from './MultiEditViewFull';
 export { ExitPlanToolView } from './ExitPlanToolView';
 export { MultiEditView } from './MultiEditView';
 export { TaskView } from './TaskView';
+export { AskUserQuestionView } from './AskUserQuestionView';

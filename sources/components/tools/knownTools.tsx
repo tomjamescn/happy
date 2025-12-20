@@ -382,6 +382,28 @@ export const knownTools = {
             return t('tools.names.todoList');
         },
     },
+    'AskUserQuestion': {
+        title: t('tools.names.askQuestion'),
+        icon: ICON_TODO,
+        noStatus: true,
+        input: z.object({
+            questions: z.array(z.object({
+                question: z.string().describe('The question to ask the user'),
+                header: z.string().optional().describe('Short label for the question'),
+                multiSelect: z.boolean().optional().default(false).describe('Allow multiple selections'),
+                options: z.array(z.object({
+                    label: z.string().describe('The option label'),
+                    description: z.string().optional().describe('Detailed description of the option')
+                })).describe('Available options')
+            })).describe('Questions to ask the user')
+        }).partial().loose(),
+        extractSubtitle: (opts: { metadata: Metadata | null, tool: ToolCall }) => {
+            if (opts.tool.input?.questions && Array.isArray(opts.tool.input.questions) && opts.tool.input.questions.length > 0) {
+                return opts.tool.input.questions[0].question;
+            }
+            return null;
+        }
+    },
     'WebSearch': {
         title: (opts: { metadata: Metadata | null, tool: ToolCall }) => {
             if (typeof opts.tool.input.query === 'string') {

@@ -8,6 +8,7 @@ import { Deferred } from '@/components/Deferred';
 import { EmptyMessages } from '@/components/EmptyMessages';
 import { VoiceAssistantStatusBar } from '@/components/VoiceAssistantStatusBar';
 import { useDraft } from '@/hooks/useDraft';
+import { useImageUpload, type UploadedImage } from '@/hooks/useImageUpload';
 import { Modal } from '@/modal';
 import { voiceHooks } from '@/realtime/hooks/voiceHooks';
 import { startRealtimeSession, stopRealtimeSession, updateCurrentSessionId } from '@/realtime/RealtimeSession';
@@ -175,6 +176,10 @@ function SessionViewLoaded({ sessionId, session }: { sessionId: string, session:
     // Use draft hook for auto-saving message drafts
     const { clearDraft } = useDraft(sessionId, message, setMessage);
 
+    // Image upload state
+    const [selectedImage, setSelectedImage] = React.useState<UploadedImage | null>(null);
+    const { uploadImage, uploading: imageUploading } = useImageUpload();
+
     // Handle dismissing CLI version warning
     const handleDismissCliWarning = React.useCallback(() => {
         if (machineId && cliVersion) {
@@ -289,8 +294,29 @@ function SessionViewLoaded({ sessionId, session }: { sessionId: string, session:
                 dotColor: sessionStatus.statusDotColor,
                 isPulsing: sessionStatus.isPulsing
             }}
-            onSend={() => {
-                if (message.trim()) {
+            onSend={async () => {
+                // If there's an image, upload it first then send image message
+                if (selectedImage && selectedImage.file) {
+                    try {
+                        const uploadResult = await uploadImage(selectedImage.file);
+                        await sync.sendImageMessage(
+                            sessionId,
+                            uploadResult.url,
+                            uploadResult.width,
+                            uploadResult.height,
+                            uploadResult.thumbhash,
+                            message.trim() || undefined
+                        );
+                        setSelectedImage(null);
+                        setMessage('');
+                        clearDraft();
+                        trackMessageSent();
+                    } catch (error) {
+                        console.error('Failed to upload image:', error);
+                        Modal.alert(t('common.error'), error instanceof Error ? error.message : 'Failed to upload image');
+                    }
+                } else if (message.trim()) {
+                    // Text-only message
                     setMessage('');
                     clearDraft();
                     sync.sendMessage(sessionId, message);
@@ -319,6 +345,10 @@ function SessionViewLoaded({ sessionId, session }: { sessionId: string, session:
                 contextSize: session.latestUsage.contextSize
             } : undefined}
             alwaysShowContextSize={alwaysShowContextSize}
+            // Image upload props
+            selectedImage={selectedImage}
+            onImageSelect={setSelectedImage}
+            imageUploading={imageUploading}
         />
     );
 

@@ -21,6 +21,7 @@ import { useSetting } from '@/sync/storage';
 import { Theme } from '@/theme';
 import { t } from '@/text';
 import { Metadata } from '@/sync/storageTypes';
+import type { UploadedImage } from '@/hooks/useImageUpload';
 
 interface AgentInputProps {
     value: string;
@@ -64,6 +65,10 @@ interface AgentInputProps {
     isSendDisabled?: boolean;
     isSending?: boolean;
     minHeight?: number;
+    // Image support
+    selectedImage?: UploadedImage | null;
+    onImageSelect?: (image: UploadedImage | null) => void;
+    imageUploading?: boolean;
 }
 
 const MAX_CONTEXT_SIZE = 190000;
@@ -282,6 +287,49 @@ const getContextWarning = (contextSize: number, alwaysShow: boolean = false, the
     }
     return null; // No display needed
 };
+
+// Image Picker Button Component (Web only)
+function ImagePickerButton({ onImageSelected, disabled, uploading }: {
+    onImageSelected: (image: UploadedImage | null) => void;
+    disabled?: boolean;
+    uploading?: boolean;
+}) {
+    if (Platform.OS !== 'web') {
+        return null;
+    }
+
+    // Dynamically import the web-specific component
+    const ImagePicker = require('./ImagePicker.web').ImagePicker;
+
+    return (
+        <ImagePicker
+            onImageSelected={(file: File) => {
+                // Create a temporary uploaded image with local preview
+                const localUri = URL.createObjectURL(file);
+                onImageSelected({
+                    url: '', // Will be filled after upload
+                    width: 0,
+                    height: 0,
+                    thumbhash: '',
+                    localUri,
+                    file,
+                });
+            }}
+            disabled={disabled}
+            uploading={uploading}
+        />
+    );
+}
+
+// Image Preview Component
+function ImagePreviewComponent({ image, onRemove, uploading }: {
+    image: UploadedImage;
+    onRemove: () => void;
+    uploading?: boolean;
+}) {
+    const ImagePreview = require('./ImagePreview').ImagePreview;
+    return <ImagePreview image={image} onRemove={onRemove} uploading={uploading} />;
+}
 
 export const AgentInput = React.memo(React.forwardRef<MultiTextInputHandle, AgentInputProps>((props, ref) => {
     const styles = stylesheet;
@@ -759,6 +807,15 @@ export const AgentInput = React.memo(React.forwardRef<MultiTextInputHandle, Agen
                 )}
                 {/* Unified panel containing input and action buttons */}
                 <View style={styles.unifiedPanel}>
+                    {/* Image preview */}
+                    {props.selectedImage && (
+                        <ImagePreviewComponent
+                            image={props.selectedImage}
+                            onRemove={() => props.onImageSelect?.(null)}
+                            uploading={props.imageUploading}
+                        />
+                    )}
+
                     {/* Input field */}
                     <View style={[styles.inputContainer, props.minHeight ? { minHeight: props.minHeight } : undefined]}>
                         <MultiTextInput
@@ -777,6 +834,15 @@ export const AgentInput = React.memo(React.forwardRef<MultiTextInputHandle, Agen
                     {/* Action buttons below input */}
                     <View style={styles.actionButtonsContainer}>
                         <View style={styles.actionButtonsLeft}>
+
+                            {/* Image picker button (Web only) */}
+                            {Platform.OS === 'web' && props.onImageSelect && (
+                                <ImagePickerButton
+                                    onImageSelected={props.onImageSelect}
+                                    disabled={props.isSendDisabled || props.isSending || props.imageUploading}
+                                    uploading={props.imageUploading}
+                                />
+                            )}
 
                             {/* Settings button */}
                             {props.onPermissionModeChange && (

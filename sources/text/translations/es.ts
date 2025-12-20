@@ -478,10 +478,15 @@ export const es: TranslationStructure = {
             readNotebook: 'Leer cuaderno',
             editNotebook: 'Editar cuaderno',
             todoList: 'Lista de tareas',
+            askQuestion: 'Pregunta',
             webSearch: 'Búsqueda web',
             reasoning: 'Razonamiento',
             applyChanges: 'Actualizar archivo',
             viewDiff: 'Cambios del archivo actual',
+        },
+        askQuestion: {
+            confirmSelection: 'Confirmar selección',
+            selectAtLeastOne: 'Por favor, seleccione al menos una opción',
         },
         desc: {
             terminalCmd: ({ cmd }: { cmd: string }) => `Terminal(cmd: ${cmd})`,

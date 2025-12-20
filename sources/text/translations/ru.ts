@@ -488,10 +488,15 @@ export const ru: TranslationStructure = {
             readNotebook: 'Чтение блокнота',
             editNotebook: 'Редактирование блокнота',
             todoList: 'Список задач',
+            askQuestion: 'Вопрос',
             webSearch: 'Веб-поиск',
             reasoning: 'Рассуждение',
             applyChanges: 'Обновить файл',
             viewDiff: 'Текущие изменения файла',
+        },
+        askQuestion: {
+            confirmSelection: 'Подтвердить выбор',
+            selectAtLeastOne: 'Пожалуйста, выберите хотя бы один вариант',
         },
         desc: {
             terminalCmd: ({ cmd }: { cmd: string }) => `Терминал(команда: ${cmd})`,

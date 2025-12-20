@@ -36,6 +36,17 @@ const rawTextContentSchema = z.object({
 });
 export type RawTextContent = z.infer<typeof rawTextContentSchema>;
 
+const rawImageContentSchema = z.object({
+    type: z.literal('image'),
+    text: z.string().optional(),  // Optional user question/context with the image
+    url: z.string(),
+    width: z.number(),
+    height: z.number(),
+    thumbhash: z.string(),
+    caption: z.string().optional(),
+});
+export type RawImageContent = z.infer<typeof rawImageContentSchema>;
+
 const rawToolUseContentSchema = z.object({
     type: z.literal('tool_use'),
     id: z.string(),
@@ -114,10 +125,21 @@ const rawRecordSchema = z.discriminatedUnion('role', [
     }),
     z.object({
         role: z.literal('user'),
-        content: z.object({
-            type: z.literal('text'),
-            text: z.string()
-        }),
+        content: z.discriminatedUnion('type', [
+            z.object({
+                type: z.literal('text'),
+                text: z.string()
+            }),
+            z.object({
+                type: z.literal('image'),
+                text: z.string().optional(),
+                url: z.string(),
+                width: z.number(),
+                height: z.number(),
+                thumbhash: z.string(),
+                caption: z.string().optional()
+            })
+        ]),
         meta: MessageMetaSchema.optional()
     })
 ]);
@@ -174,6 +196,14 @@ export type NormalizedMessage = ({
     content: {
         type: 'text';
         text: string;
+    } | {
+        type: 'image';
+        text?: string;
+        url: string;
+        width: number;
+        height: number;
+        thumbhash: string;
+        caption?: string;
     }
 } | {
     role: 'agent'

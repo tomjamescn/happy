@@ -32,6 +32,22 @@ export type UserTextMessage = {
     meta?: MessageMeta;
 }
 
+export type UserImageMessage = {
+    kind: 'user-image';
+    id: string;
+    localId: string | null;
+    createdAt: number;
+    text?: string;             // Optional user question/context with the image
+    image: {
+        url: string;           // S3 URL or data URI
+        width: number;
+        height: number;
+        thumbhash: string;     // Thumbhash for fast preview
+        caption?: string;      // Optional caption text (metadata about the image itself)
+    };
+    meta?: MessageMeta;
+}
+
 export type ModeSwitchMessage = {
     kind: 'agent-event';
     id: string;
@@ -59,4 +75,4 @@ export type ToolCallMessage = {
     meta?: MessageMeta;
 }
 
-export type Message = UserTextMessage | AgentTextMessage | ToolCallMessage | ModeSwitchMessage;
+export type Message = UserTextMessage | UserImageMessage | AgentTextMessage | ToolCallMessage | ModeSwitchMessage;
